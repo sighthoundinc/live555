@@ -72,6 +72,8 @@ protected: // redefined virtual functions
   virtual void setStreamScale(unsigned clientSessionId, void* streamToken, float scale);
   virtual float getCurrentNPT(void* streamToken);
   virtual FramedSource* getStreamSource(void* streamToken);
+  virtual void getRTPSinkandRTCP(void* streamToken,
+				 RTPSink const*& rtpSink, RTCPInstance const*& rtcp);
   virtual void deleteStream(unsigned clientSessionId, void*& streamToken);
 
 protected: // new virtual functions, possibly redefined by subclasses
@@ -97,6 +99,11 @@ protected: // new virtual functions, defined by all subclasses
   virtual RTPSink* createNewRTPSink(Groupsock* rtpGroupsock,
 				    unsigned char rtpPayloadTypeIfDynamic,
 				    FramedSource* inputSource) = 0;
+
+protected: // new virtual functions, may be redefined by a subclass:
+  virtual Groupsock* createGroupsock(struct in_addr const& addr, Port port);
+  virtual RTCPInstance* createRTCP(Groupsock* RTCPgs, unsigned totSessionBW, /* in kbps */
+				   unsigned char const* cname, RTPSink* sink);
 
 public:
   void multiplexRTCPWithRTP() { fMultiplexRTCPWithRTP = True; }
@@ -173,14 +180,14 @@ public:
 	      Groupsock* rtpGS, Groupsock* rtcpGS);
   virtual ~StreamState();
 
-  void startPlaying(Destinations* destinations,
+  void startPlaying(Destinations* destinations, unsigned clientSessionId,
 		    TaskFunc* rtcpRRHandler, void* rtcpRRHandlerClientData,
 		    ServerRequestAlternativeByteHandler* serverRequestAlternativeByteHandler,
                     void* serverRequestAlternativeByteHandlerClientData);
   void pause();
   void sendRTCPAppPacket(u_int8_t subtype, char const* name,
 			 u_int8_t* appDependentData, unsigned appDependentDataSize);
-  void endPlaying(Destinations* destinations);
+  void endPlaying(Destinations* destinations, unsigned clientSessionId);
   void reclaim();
 
   unsigned& referenceCount() { return fReferenceCount; }
@@ -189,6 +196,7 @@ public:
   Port const& serverRTCPPort() const { return fServerRTCPPort; }
 
   RTPSink* rtpSink() const { return fRTPSink; }
+  RTCPInstance* rtcpInstance() const { return fRTCPInstance; }
 
   float streamDuration() const { return fStreamDuration; }
 

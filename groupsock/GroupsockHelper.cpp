@@ -29,6 +29,11 @@ extern "C" int initializeWinsockIfNecessary();
 #include <fcntl.h>
 #define initializeWinsockIfNecessary() 1
 #endif
+#if defined(__WIN32__) || defined(_WIN32) || defined(_QNX4)
+#else
+#include <signal.h>
+#define USE_SIGNALS 1
+#endif
 #include <stdio.h>
 
 // By default, use INADDR_ANY for the sending and receiving interfaces:
@@ -313,7 +318,7 @@ int readSocket(UsageEnvironment& env,
 }
 
 Boolean writeSocket(UsageEnvironment& env,
-		    int socket, struct in_addr address, Port port,
+		    int socket, struct in_addr address, portNumBits portNum,
 		    u_int8_t ttlArg,
 		    unsigned char* buffer, unsigned bufferSize) {
   // Before sending, set the socket's TTL:
@@ -329,14 +334,14 @@ Boolean writeSocket(UsageEnvironment& env,
     return False;
   }
 
-  return writeSocket(env, socket, address, port, buffer, bufferSize);
+  return writeSocket(env, socket, address, portNum, buffer, bufferSize);
 }
 
 Boolean writeSocket(UsageEnvironment& env,
-		    int socket, struct in_addr address, Port port,
+		    int socket, struct in_addr address, portNumBits portNum,
 		    unsigned char* buffer, unsigned bufferSize) {
   do {
-    MAKE_SOCKADDR_IN(dest, address.s_addr, port.num());
+    MAKE_SOCKADDR_IN(dest, address.s_addr, portNum);
     int bytesSent = sendto(socket, (char*)buffer, bufferSize, 0,
 			   (struct sockaddr*)&dest, sizeof dest);
     if (bytesSent != (int)bufferSize) {
@@ -350,6 +355,17 @@ Boolean writeSocket(UsageEnvironment& env,
   } while (0);
 
   return False;
+}
+
+void ignoreSigPipeOnSocket(int socketNum) {
+  #ifdef USE_SIGNALS
+  #ifdef SO_NOSIGPIPE
+  int set_option = 1;
+  setsockopt(socketNum, SOL_SOCKET, SO_NOSIGPIPE, &set_option, sizeof set_option);
+  #else
+  signal(SIGPIPE, SIG_IGN);
+  #endif
+  #endif
 }
 
 static unsigned getBufferSize(UsageEnvironment& env, int bufOptName,
@@ -611,7 +627,7 @@ netAddressBits ourIPAddress(UsageEnvironment& env) {
       unsigned char testString[] = "hostIdTest";
       unsigned testStringLength = sizeof testString;
 
-      if (!writeSocket(env, sock, testAddr, testPort, 0,
+      if (!writeSocket(env, sock, testAddr, testPort.num(), 0,
 		       testString, testStringLength)) break;
 
       // Block until the socket is readable (with a 5-second timeout):

@@ -18,6 +18,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // A server that supports both RTSP, and HTTP streaming (using Apple's "HTTP Live Streaming" protocol)
 // Implementation
 
+#include "RTSPServer.hh"
 #include "RTSPServerSupportingHTTPStreaming.hh"
 #include "RTSPCommon.hh"
 #ifndef _WIN32_WCE
@@ -43,7 +44,7 @@ RTSPServerSupportingHTTPStreaming
 RTSPServerSupportingHTTPStreaming::~RTSPServerSupportingHTTPStreaming() {
 }
 
-RTSPServer::RTSPClientConnection*
+GenericMediaServer::ClientConnection*
 RTSPServerSupportingHTTPStreaming::createNewClientConnection(int clientSocket, struct sockaddr_in clientAddr) {
   return new RTSPClientConnectionSupportingHTTPStreaming(*this, clientSocket, clientAddr);
 }
