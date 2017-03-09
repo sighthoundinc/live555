@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2015 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2017 Live Networks, Inc.  All rights reserved.
 // RTCP
 // Implementation
 
@@ -24,6 +24,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #if defined(__WIN32__) || defined(_WIN32) || defined(_QNX4)
 #define snprintf _snprintf
 #endif
+#define HACK_FOR_CHROME_WEBRTC_BUG 1 //#####@@@@@
 
 ////////// RTCPMemberDatabase //////////
 
@@ -38,11 +39,11 @@ public:
 	delete fTable;
   }
 
-  Boolean isMember(unsigned ssrc) const {
+  Boolean isMember(u_int32_t ssrc) const {
     return fTable->Lookup((char*)(long)ssrc) != NULL;
   }
 
-  Boolean noteMembership(unsigned ssrc, unsigned curTimeCount) {
+  Boolean noteMembership(u_int32_t ssrc, unsigned curTimeCount) {
     Boolean isNew = !isMember(ssrc);
 
     if (isNew) {
@@ -55,7 +56,7 @@ public:
     return isNew;
   }
 
-  Boolean remove(unsigned ssrc) {
+  Boolean remove(u_int32_t ssrc) {
     Boolean wasPresent = fTable->Remove((char*)(long)ssrc);
     if (wasPresent) {
       --fNumMembers;
@@ -415,7 +416,9 @@ void RTCPInstance::incomingReportHandler(RTCPInstance* instance,
 void RTCPInstance::incomingReportHandler1() {
   do {
     if (fNumBytesAlreadyRead >= maxRTCPPacketSize) {
-      envir() << "RTCPInstance error: Hit limit when reading incoming packet over TCP. Increase \"maxRTCPPacketSize\"\n";
+      envir() << "RTCPInstance error: Hit limit when reading incoming packet over TCP. (fNumBytesAlreadyRead ("
+	      << fNumBytesAlreadyRead << ") >= maxRTCPPacketSize (" << maxRTCPPacketSize
+	      << ")).  The remote endpoint is using a buggy implementation of RTP/RTCP-over-TCP.  Please upgrade it!\n";
       break;
     }
 
@@ -644,6 +647,7 @@ void RTCPInstance
 #endif
 	    break;
 	  }
+	  length -= 4;
 #ifdef DEBUG
 	  fprintf(stderr, "\tname:%c%c%c%c\n", pkt[0], pkt[1], pkt[2], pkt[3]);
 #endif
@@ -834,8 +838,7 @@ void RTCPInstance
   } while (0);
 }
 
-void RTCPInstance::onReceive(int typeOfPacket, int totPacketSize,
-			     unsigned ssrc) {
+void RTCPInstance::onReceive(int typeOfPacket, int totPacketSize, u_int32_t ssrc) {
   fTypeOfPacket = typeOfPacket;
   fLastReceivedSize = totPacketSize;
   fLastReceivedSSRC = ssrc;
@@ -989,7 +992,7 @@ void RTCPInstance::addRR() {
 }
 
 void RTCPInstance::enqueueCommonReportPrefix(unsigned char packetType,
-					     unsigned SSRC,
+					     u_int32_t SSRC,
 					     unsigned numExtraWords) {
   unsigned numReportingSources;
   if (fSource == NULL) {
@@ -1154,6 +1157,8 @@ void RTCPInstance::reschedule(double nextTime) {
 }
 
 void RTCPInstance::onExpire1() {
+  nextTask() = NULL;
+
   // Note: fTotSessionBW is kbits per second
   double rtcpBW = 0.05*fTotSessionBW*1024/8; // -> bytes per second
 
