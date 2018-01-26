@@ -286,7 +286,7 @@ private:
   Boolean parseRTPInfoParams(char const*& paramStr, u_int16_t& seqNum, u_int32_t& timestamp);
   Boolean handleSETUPResponse(MediaSubsession& subsession, char const* sessionParamsStr, char const* transportParamsStr,
 			      Boolean streamUsingTCP);
-  Boolean handlePLAYResponse(MediaSession& session, MediaSubsession& subsession,
+  Boolean handlePLAYResponse(MediaSession* session, MediaSubsession* subsession,
                              char const* scaleParamsStr, const char* speedParamsStr,
 			     char const* rangeParamsStr, char const* rtpInfoParamsStr);
   Boolean handleTEARDOWNResponse(MediaSession& session, MediaSubsession& subsession);
