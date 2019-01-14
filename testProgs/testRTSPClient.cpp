@@ -32,7 +32,8 @@ void continueAfterPLAY(RTSPClient* rtspClient, int resultCode, char* resultStrin
 
 // Other event handler functions:
 void subsessionAfterPlaying(void* clientData); // called when a stream's subsession (e.g., audio or video substream) ends
-void subsessionByeHandler(void* clientData); // called when a RTCP "BYE" is received for a subsession
+void subsessionByeHandler(void* clientData, char const* reason);
+  // called when a RTCP "BYE" is received for a subsession
 void streamTimerHandler(void* clientData);
   // called at the end of a stream's expected duration (if the stream has not already signaled its end using a RTCP "BYE")
 
@@ -298,7 +299,7 @@ void continueAfterSETUP(RTSPClient* rtspClient, int resultCode, char* resultStri
 				       subsessionAfterPlaying, scs.subsession);
     // Also set a handler to be called if a RTCP "BYE" arrives for this subsession:
     if (scs.subsession->rtcpInstance() != NULL) {
-      scs.subsession->rtcpInstance()->setByeHandler(subsessionByeHandler, scs.subsession);
+      scs.subsession->rtcpInstance()->setByeWithReasonHandler(subsessionByeHandler, scs.subsession);
     }
   } while (0);
   delete[] resultString;
@@ -368,12 +369,17 @@ void subsessionAfterPlaying(void* clientData) {
   shutdownStream(rtspClient);
 }
 
-void subsessionByeHandler(void* clientData) {
+void subsessionByeHandler(void* clientData, char const* reason) {
   MediaSubsession* subsession = (MediaSubsession*)clientData;
   RTSPClient* rtspClient = (RTSPClient*)subsession->miscPtr;
   UsageEnvironment& env = rtspClient->envir(); // alias
 
-  env << *rtspClient << "Received RTCP \"BYE\" on \"" << *subsession << "\" subsession\n";
+  env << *rtspClient << "Received RTCP \"BYE\"";
+  if (reason != NULL) {
+    env << " (reason:\"" << reason << "\")";
+    delete[] reason;
+  }
+  env << " on \"" << *subsession << "\" subsession\n";
 
   // Now act as if the subsession had closed:
   subsessionAfterPlaying(subsession);

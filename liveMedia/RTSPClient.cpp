@@ -1300,7 +1300,7 @@ Boolean RTSPClient::handleGET_PARAMETERResponse(char const* parameterName, char*
       // ASSERT: parameterNameLen >= 2;
       parameterNameLen -= 2; // because of the trailing \r\n
       if (resultValueString + parameterNameLen > resultValueStringEnd) break; // not enough space
-      if (_strncasecmp(resultValueString, parameterName, parameterNameLen) == 0) {
+      if (parameterNameLen > 0 && _strncasecmp(resultValueString, parameterName, parameterNameLen) == 0) {
 	resultValueString += parameterNameLen;
 	// ASSERT: resultValueString <= resultValueStringEnd
 	if (resultValueString == resultValueStringEnd) break;
@@ -1721,8 +1721,21 @@ void RTSPClient::handleResponseBytes(int newBytesRead) {
 	} else if (checkForHeader(lineStart, "Session:", 8, sessionParamsStr)) {
 	} else if (checkForHeader(lineStart, "Transport:", 10, transportParamsStr)) {
 	} else if (checkForHeader(lineStart, "Scale:", 6, scaleParamsStr)) {
-	} else if (checkForHeader(lineStart, "Speed:", 6, speedParamsStr)) {
-	} else if (checkForHeader(lineStart, "Range:", 6, rangeParamsStr)) {
+	} else if (checkForHeader(lineStart, "Speed:",
+// NOTE: Should you feel the need to modify this code,
+				  6,
+// please first email the "live-devel" mailing list
+				  speedParamsStr
+// (see http://live555.com/liveMedia/faq.html#mailing-list-address for details),
+				  )) {
+// to check whether your proposed modification is appropriate/correct,
+	} else if (checkForHeader(lineStart, "Range:",
+// and, if so, whether instead it could be included in
+				  6,
+// a future release of the "LIVE555 Streaming Media" software,
+				  rangeParamsStr
+// so that other projects that use the code could benefit (not just your own project).
+				  )) {
 	} else if (checkForHeader(lineStart, "RTP-Info:", 9, rtpInfoParamsStr)) {
 	} else if (checkForHeader(lineStart, "WWW-Authenticate:", 17, headerParamsStr)) {
 	  // If we've already seen a "WWW-Authenticate:" header, then we replace it with this new one only if
