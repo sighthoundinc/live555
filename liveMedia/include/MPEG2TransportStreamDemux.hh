@@ -15,32 +15,36 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 **********/
 // "liveMedia"
 // Copyright (c) 1996-2019 Live Networks, Inc.  All rights reserved.
-// A simplified version of "H264VideoStreamFramer" that takes only complete,
-// discrete frames (rather than an arbitrary byte stream) as input.
-// This avoids the parsing and data copying overhead of the full
-// "H264VideoStreamFramer".
+// Demultiplexer for a MPEG Transport Stream
 // C++ header
 
-#ifndef _H264_VIDEO_STREAM_DISCRETE_FRAMER_HH
-#define _H264_VIDEO_STREAM_DISCRETE_FRAMER_HH
+#ifndef _MPEG2_TRANSPORT_STREAM_DEMUX_HH
+#define _MPEG2_TRANSPORT_STREAM_DEMUX_HH
 
-#ifndef _H264_OR_5_VIDEO_STREAM_DISCRETE_FRAMER_HH
-#include "H264or5VideoStreamDiscreteFramer.hh"
+#ifndef _FRAMED_SOURCE_HH
+#include "FramedSource.hh"
 #endif
 
-class H264VideoStreamDiscreteFramer: public H264or5VideoStreamDiscreteFramer {
+class MPEG2TransportStreamDemux: public Medium {
 public:
-  static H264VideoStreamDiscreteFramer*
-  createNew(UsageEnvironment& env, FramedSource* inputSource, Boolean includeStartCodeInOutput = False);
-
-protected:
-  H264VideoStreamDiscreteFramer(UsageEnvironment& env, FramedSource* inputSource, Boolean includeStartCodeInOutput);
-      // called only by createNew()
-  virtual ~H264VideoStreamDiscreteFramer();
+  static MPEG2TransportStreamDemux* createNew(UsageEnvironment& env,
+					      FramedSource* inputSource,
+					      FramedSource::onCloseFunc* onCloseFunc,
+					      void* onCloseClientData);
 
 private:
-  // redefined virtual functions:
-  virtual Boolean isH264VideoStreamFramer() const;
+  MPEG2TransportStreamDemux(UsageEnvironment& env, FramedSource* inputSource,
+			    FramedSource::onCloseFunc* onCloseFunc, void* onCloseClientData);
+      // called only by createNew()
+  virtual ~MPEG2TransportStreamDemux();
+
+  static void handleEndOfFile(void* clientData);
+  void handleEndOfFile();
+
+private:
+  class MPEG2TransportStreamParser* fParser;
+  FramedSource::onCloseFunc* fOnCloseFunc;
+  void* fOnCloseClientData;
 };
 
 #endif

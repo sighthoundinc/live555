@@ -15,32 +15,36 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 **********/
 // "liveMedia"
 // Copyright (c) 1996-2019 Live Networks, Inc.  All rights reserved.
-// A simplified version of "H264VideoStreamFramer" that takes only complete,
-// discrete frames (rather than an arbitrary byte stream) as input.
-// This avoids the parsing and data copying overhead of the full
-// "H264VideoStreamFramer".
+// A media track, demultiplexed from a MPEG Transport Stream file
 // C++ header
 
-#ifndef _H264_VIDEO_STREAM_DISCRETE_FRAMER_HH
-#define _H264_VIDEO_STREAM_DISCRETE_FRAMER_HH
+#ifndef _MPEG2_TRANSPORT_STREAM_DEMUXED_TRACK_HH
+#define _MPEG2_TRANSPORT_STREAM_DEMUXED_TRACK_HH
 
-#ifndef _H264_OR_5_VIDEO_STREAM_DISCRETE_FRAMER_HH
-#include "H264or5VideoStreamDiscreteFramer.hh"
+#ifndef _MPEG2_TRANSPORT_STREAM_DEMUX_HH
+#include "MPEG2TransportStreamDemux.hh"
 #endif
 
-class H264VideoStreamDiscreteFramer: public H264or5VideoStreamDiscreteFramer {
+class MPEG2TransportStreamDemuxedTrack: public FramedSource {
 public:
-  static H264VideoStreamDiscreteFramer*
-  createNew(UsageEnvironment& env, FramedSource* inputSource, Boolean includeStartCodeInOutput = False);
-
-protected:
-  H264VideoStreamDiscreteFramer(UsageEnvironment& env, FramedSource* inputSource, Boolean includeStartCodeInOutput);
-      // called only by createNew()
-  virtual ~H264VideoStreamDiscreteFramer();
+  MPEG2TransportStreamDemuxedTrack(class MPEG2TransportStreamParser& ourParser, u_int16_t pid);
+  virtual ~MPEG2TransportStreamDemuxedTrack();
 
 private:
   // redefined virtual functions:
-  virtual Boolean isH264VideoStreamFramer() const;
+  virtual void doGetNextFrame();
+
+private: // We are accessed only by "MPEG2TransportStreamParser" (a friend)
+  friend class MPEG2TransportStreamParser;
+  unsigned char* to() { return fTo; }
+  unsigned maxSize() { return fMaxSize; }
+  unsigned& frameSize() { return fFrameSize; }
+  unsigned& numTruncatedBytes() { return fNumTruncatedBytes; }
+  struct timeval& presentationTime() { return fPresentationTime; }
+
+private:
+  class MPEG2TransportStreamParser& fOurParser;
+  u_int16_t fPID;
 };
 
 #endif
