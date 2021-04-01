@@ -57,14 +57,16 @@ void MPEGVideoStreamFramer::flushInput() {
 
 void MPEGVideoStreamFramer::reset() {
   fPictureCount = 0;
-  fPictureEndMarker = False;
+  fPictureEndMarker = True; // So that we start looking as if we'd just ended an 'access unit'
   fPicturesAdjustment = 0;
   fPictureTimeBase = 0.0;
   fTcSecsBase = 0;
   fHaveSeenFirstTimeCode = False;
 
-  // Use the current wallclock time as the base 'presentation time':
-  gettimeofday(&fPresentationTimeBase, NULL);
+  // Clear the 'presentation time base', as a signal for subclasses
+  // to reset it (to our current time) when we start (or resume) streaming:
+  fPresentationTimeBase.tv_sec = 0;
+  fPresentationTimeBase.tv_usec = 0;
 }
 
 #ifdef DEBUG

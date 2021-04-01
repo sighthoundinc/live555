@@ -43,15 +43,15 @@ protected: // we're a virtual base class
   virtual ~OnDemandServerMediaSubsession();
 
 protected: // redefined virtual functions
-  virtual char const* sdpLines();
+  virtual char const* sdpLines(int addressFamily);
   virtual void getStreamParameters(unsigned clientSessionId,
-				   netAddressBits clientAddress,
+				   struct sockaddr_storage const& clientAddress,
                                    Port const& clientRTPPort,
                                    Port const& clientRTCPPort,
 				   int tcpSocketNum,
                                    unsigned char rtpChannelId,
                                    unsigned char rtcpChannelId,
-                                   netAddressBits& destinationAddress,
+                                   struct sockaddr_storage& destinationAddress,
 				   u_int8_t& destinationTTL,
                                    Boolean& isMulticast,
                                    Port& serverRTPPort,
@@ -101,7 +101,7 @@ protected: // new virtual functions, defined by all subclasses
 				    FramedSource* inputSource) = 0;
 
 protected: // new virtual functions, may be redefined by a subclass:
-  virtual Groupsock* createGroupsock(struct in_addr const& addr, Port port);
+  virtual Groupsock* createGroupsock(struct sockaddr_storage const& addr, Port port);
   virtual RTCPInstance* createRTCP(Groupsock* RTCPgs, unsigned totSessionBW, /* in kbps */
 				   unsigned char const* cname, RTPSink* sink);
 
@@ -125,7 +125,7 @@ public:
     // of "name" are used.  (If "name" has fewer than 4 bytes, or is NULL,
     // then the remaining bytes are '\0'.)
 
-private:
+protected:
   void setSDPLinesFromRTPSink(RTPSink* rtpSink, FramedSource* inputSource,
 			      unsigned estBitrate);
       // used to implement "sdpLines()"
@@ -152,7 +152,7 @@ private:
 
 class Destinations {
 public:
-  Destinations(struct in_addr const& destAddr,
+  Destinations(struct sockaddr_storage const& destAddr,
                Port const& rtpDestPort,
                Port const& rtcpDestPort)
     : isTCP(False), addr(destAddr), rtpPort(rtpDestPort), rtcpPort(rtcpDestPort) {
@@ -164,7 +164,7 @@ public:
 
 public:
   Boolean isTCP;
-  struct in_addr addr;
+  struct sockaddr_storage addr;
   Port rtpPort;
   Port rtcpPort;
   int tcpSocketNum;

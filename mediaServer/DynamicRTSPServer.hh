@@ -21,25 +21,27 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #ifndef _DYNAMIC_RTSP_SERVER_HH
 #define _DYNAMIC_RTSP_SERVER_HH
 
-#ifndef _RTSP_SERVER_SUPPORTING_HTTP_STREAMING_HH
-#include "RTSPServerSupportingHTTPStreaming.hh"
+#ifndef _RTSP_SERVER_HH
+#include "RTSPServer.hh"
 #endif
 
-class DynamicRTSPServer: public RTSPServerSupportingHTTPStreaming {
+class DynamicRTSPServer: public RTSPServer {
 public:
   static DynamicRTSPServer* createNew(UsageEnvironment& env, Port ourPort,
 				      UserAuthenticationDatabase* authDatabase,
 				      unsigned reclamationTestSeconds = 65);
 
 protected:
-  DynamicRTSPServer(UsageEnvironment& env, int ourSocket, Port ourPort,
+  DynamicRTSPServer(UsageEnvironment& env, int ourSocketIPv4, int ourSocketIPv6, Port ourPort,
 		    UserAuthenticationDatabase* authDatabase, unsigned reclamationTestSeconds);
   // called only by createNew();
   virtual ~DynamicRTSPServer();
 
 protected: // redefined virtual functions
-  virtual ServerMediaSession*
-  lookupServerMediaSession(char const* streamName, Boolean isFirstLookupInSession);
+  virtual void lookupServerMediaSession(char const* streamName,
+					lookupServerMediaSessionCompletionFunc* completionFunc,
+					void* completionClientData,
+					Boolean isFirstLookupInSession);
 };
 
 #endif

@@ -20,7 +20,6 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Implementation
 
 #include "RTSPRegisterSender.hh"
-#include <GroupsockHelper.hh> // for MAKE_SOCKADDR_IN
 
 ////////// RTSPRegisterOrDeregisterSender implementation /////////
 
@@ -76,11 +75,11 @@ RTSPRegisterSender* RTSPRegisterSender
 				verbosityLevel, applicationName);
 }
 
-void RTSPRegisterSender::grabConnection(int& sock, struct sockaddr_in& remoteAddress) {
+void RTSPRegisterSender::grabConnection(int& sock, struct sockaddr_storage& remoteAddress) {
   sock = grabSocket();
 
-  MAKE_SOCKADDR_IN(remoteAddr, fServerAddress, htons(fRemoteClientPortNum));
-  remoteAddress = remoteAddr;
+  remoteAddress = fServerAddress;
+  setPortNum(remoteAddress, htons(fRemoteClientPortNum));
 }
 
 RTSPRegisterSender

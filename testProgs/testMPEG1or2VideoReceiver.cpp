@@ -63,16 +63,19 @@ int main(int argc, char** argv) {
   const unsigned char ttl = 1; // low, in case routers don't admin scope
 #endif
 
-  struct in_addr sessionAddress;
-  sessionAddress.s_addr = our_inet_addr(sessionAddressStr);
+  NetAddressList sessionAddresses(sessionAddressStr);
+  struct sockaddr_storage sessionAddress;
+  copyAddress(sessionAddress, sessionAddresses.firstAddress());
+
   const Port rtpPort(rtpPortNum);
   const Port rtcpPort(rtcpPortNum);
 
 #ifdef USE_SSM
-  char* sourceAddressStr = "aaa.bbb.ccc.ddd";
+  char const* sourceAddressStr = "aaa.bbb.ccc.ddd";
                            // replace this with the real source address
-  struct in_addr sourceFilterAddress;
-  sourceFilterAddress.s_addr = our_inet_addr(sourceAddressStr);
+  NetAddressList sourceFilterAddresses(sourceAddressStr);
+  struct sockaddr_storage sourceFilterAddress;
+  copyAddress(sourceFilterAddress, sourceFilterAddresses.firstAddress());
 
   Groupsock rtpGroupsock(*env, sessionAddress, sourceFilterAddress, rtpPort);
   Groupsock rtcpGroupsock(*env, sessionAddress, sourceFilterAddress, rtcpPort);

@@ -42,7 +42,7 @@ public:
 			      int verbosityLevel = 0,
 			      char const* applicationName = NULL);
 
-  void setProxyServer(unsigned proxyServerAddress,
+  void setProxyServer(struct sockaddr_storage const& proxyServerAddress,
 		      portNumBits proxyServerPortNum);
 
   void setClientStartPortNum(portNumBits clientStartPortNum) {
@@ -127,7 +127,8 @@ private:
   // Set for each call:
   char const* fURL;
   unsigned fURLSize;
-  struct in_addr fServerAddress;
+  struct sockaddr_storage fServerAddress;
+  Boolean fServerAddressIsSet;
   portNumBits fServerPortNum; // in host order
   portNumBits fClientStartPortNum; // in host order
   unsigned fCallId, fFromTag; // set by us

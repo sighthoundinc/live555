@@ -33,8 +33,9 @@ int main(int argc, char** argv) {
 
   // Create a 'groupsock' for the input multicast group,port:
   char const* sessionAddressStr = "224.2.127.254";
-  struct in_addr sessionAddress;
-  sessionAddress.s_addr = our_inet_addr(sessionAddressStr);
+  NetAddressList sessionAddresses(sessionAddressStr);
+  struct sockaddr_storage sessionAddress;
+  copyAddress(sessionAddress, sessionAddresses.firstAddress());
 
   const Port port(9875);
   const unsigned char ttl = 0; // we're only reading from this mcast group
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
   // synchronously, in a loop, so we don't need to set up an asynchronous
   // event handler like we do in most of the other test programs.)
   unsigned packetSize;
-  struct sockaddr_in fromAddress;
+  struct sockaddr_storage fromAddress;
   while (inputGroupsock.handleRead(packet, maxPacketSize,
 				   packetSize, fromAddress)) {
     printf("\n[packet from %s (%d bytes)]\n", AddressString(fromAddress).val(), packetSize);

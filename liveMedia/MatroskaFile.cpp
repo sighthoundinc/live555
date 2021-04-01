@@ -334,6 +334,7 @@ void MatroskaFile::getH265ConfigData(MatroskaTrack const* track,
  	VPS_SPS_PPSBytes = &track->codecPrivate[22];
       }
     }
+    if (VPS_SPS_PPSBytes == NULL) break; // no VPS,SPS,PPS NAL unit information was present
 	
     // Extract, from "VPS_SPS_PPSBytes", one VPS NAL unit, one SPS NAL unit, and one PPS NAL unit.
     // (I hope one is all we need of each.)
@@ -636,7 +637,7 @@ RTPSink* MatroskaFile
       delete[] identificationHeader; delete[] commentHeader; delete[] setupHeader;
     } else if (strcmp(track->mimeType, "video/RAW") == 0) {
       result = RawVideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic, 
-                                          track->pixelHeight, track->pixelWidth, track->bitDepth, track->colorSampling, track->colorimetry);
+                                          track->pixelWidth, track->pixelHeight, track->bitDepth, track->colorSampling, track->colorimetry);
     } else if (strcmp(track->mimeType, "video/H264") == 0) {
       u_int8_t* sps; unsigned spsSize;
       u_int8_t* pps; unsigned ppsSize;
@@ -685,8 +686,8 @@ FileSink* MatroskaFile::createFileSinkForTrackNumber(unsigned trackNumber, char 
       delete[] sps; delete[] pps;
 
       char* sPropParameterSetsStr
-	= new char[sps_base64 == NULL ? 0 : strlen(sps_base64) +
-		   pps_base64 == NULL ? 0 : strlen(pps_base64) +
+	= new char[(sps_base64 == NULL ? 0 : strlen(sps_base64)) +
+		   (pps_base64 == NULL ? 0 : strlen(pps_base64)) +
 		   10 /*more than enough space*/];
       sprintf(sPropParameterSetsStr, "%s,%s", sps_base64, pps_base64);
       delete[] sps_base64; delete[] pps_base64;
@@ -907,6 +908,10 @@ void MatroskaDemux::seekToTime(double& seekNPT) {
   if (fOurParser != NULL) fOurParser->seekToTime(seekNPT);
 }
 
+void MatroskaDemux::pause() {
+  if (fOurParser != NULL) fOurParser->pause();
+}
+
 void MatroskaDemux::handleEndOfFile(void* clientData) {
   ((MatroskaDemux*)clientData)->handleEndOfFile();
 }
@@ -934,6 +939,18 @@ void MatroskaDemux::handleEndOfFile() {
   }
 
   delete[] tracks;
+}
+
+void MatroskaDemux::resetState() {
+  // Iterate through all of our 'demuxed tracks', calling 'reset()' on each one.
+  HashTable::Iterator* iter = HashTable::Iterator::create(*fDemuxedTracksTable);
+  MatroskaDemuxedTrack* demuxedTrack;
+  char const* trackNumber;
+
+  while ((demuxedTrack = (MatroskaDemuxedTrack*)iter->next(trackNumber)) != NULL) {
+    demuxedTrack->reset();
+  }
+  delete iter;
 }
 
 
