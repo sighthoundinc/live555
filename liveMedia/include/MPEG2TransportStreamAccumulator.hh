@@ -20,7 +20,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // C++ header
 
 #ifndef _MPEG2_TRANSPORT_STREAM_ACCUMULATOR_HH
-#define _MPEG_TRANSPORT_STREAM_ACCUMULATOR_HH
+#define _MPEG2_TRANSPORT_STREAM_ACCUMULATOR_HH
 
 #ifndef _FRAMED_FILTER_HH
 #include "FramedFilter.hh"
