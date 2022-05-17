@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2021 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2022 Live Networks, Inc.  All rights reserved.
 // A generic RTSP client - for a single "rtsp://" URL
 // C++ header
 
@@ -149,6 +149,11 @@ public:
 				   Authenticator* authenticator = NULL);
       // Issues an aggregate RTSP "GET_PARAMETER" command on "session", then returns the "CSeq" sequence number that was used in the command.
       // (The "responseHandler" and "authenticator" parameters are as described for "sendDescribeCommand".)
+
+  void setRequireValue(char const* requireValue = NULL);
+      // Sets a string to be used as the value of a "Require:" header to be included in
+      // subsequent RTSP commands.  Call "setRequireValue()" again (i.e., with no parameter)
+      // to clear this (and so stop "Require:" headers from being included in subsequent cmds).
 
   void sendDummyUDPPackets(MediaSession& session, unsigned numDummyPackets = 2);
   void sendDummyUDPPackets(MediaSubsession& subsession, unsigned numDummyPackets = 2);
@@ -350,6 +355,7 @@ private:
   char* fResponseBuffer;
   unsigned fResponseBytesAlreadySeen, fResponseBufferBytesLeft;
   RequestQueue fRequestsAwaitingConnection, fRequestsAwaitingHTTPTunneling, fRequestsAwaitingResponse;
+  char* fRequireStr;
 
   // Support for tunneling RTSP-over-HTTP:
   char fSessionCookie[33];
@@ -357,8 +363,8 @@ private:
   Boolean fHTTPTunnelingConnectionIsPending;
 
   // Optional support for TLS:
-  TLSState fTLS;
-  friend class TLSState;
+  ClientTLSState fTLS;
+  friend class ClientTLSState;
 };
 
 
