@@ -20,9 +20,14 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 
 #include "GroupsockHelper.hh"
 
+#if defined(__WIN32__) || defined(_WIN32)
+extern "C" int initializeWinsockIfNecessary();
+#else
+#define initializeWinsockIfNecessary() 1
+#endif
+
 #if (defined(__WIN32__) || defined(_WIN32)) && !defined(__MINGW32__)
 #include <time.h>
-extern "C" int initializeWinsockIfNecessary();
 #else
 #include <stdarg.h>
 #include <time.h>
@@ -35,7 +40,6 @@ extern "C" int initializeWinsockIfNecessary();
 #endif
 #endif
 #include <fcntl.h>
-#define initializeWinsockIfNecessary() 1
 #endif
 #if defined(__WIN32__) || defined(_WIN32) || defined(_QNX4)
 #else
@@ -265,21 +269,21 @@ Boolean setSocketKeepAlive(int sock) {
 
 #ifdef TCP_KEEPIDLE
   int const keepalive_time = 180;
-  if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, (void*)&keepalive_time, sizeof keepalive_time) < 0) {
+  if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, (const char*)&keepalive_time, sizeof keepalive_time) < 0) {
     return False;
   }
 #endif
 
 #ifdef TCP_KEEPCNT
   int const keepalive_count = 5;
-  if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, (void*)&keepalive_count, sizeof keepalive_count) < 0) {
+  if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, (const char*)&keepalive_count, sizeof keepalive_count) < 0) {
     return False;
   }
 #endif
 
 #ifdef TCP_KEEPINTVL
   int const keepalive_interval = 20;
-  if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, (void*)&keepalive_interval, sizeof keepalive_interval) < 0) {
+  if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, (const char*)&keepalive_interval, sizeof keepalive_interval) < 0) {
     return False;
   }
 #endif
@@ -372,7 +376,7 @@ int setupStreamSocket(UsageEnvironment& env, Port port, int domain,
     }
   }
 
-  // Set the keep alive mechanism for the TCP socket, to avoid "ghost sockets" 
+  // Set the keep alive mechanism for the TCP socket, to avoid "ghost sockets"
   //    that remain after an interrupted communication.
   if (setKeepAlive) {
     if (!setSocketKeepAlive(newSocket)) {
@@ -438,7 +442,7 @@ Boolean writeSocket(UsageEnvironment& env,
       return False;
     }
   }
-  
+
   return writeSocket(env, socket, addressAndPort, buffer, bufferSize);
 }
 
@@ -455,7 +459,7 @@ Boolean writeSocket(UsageEnvironment& env,
       socketErr(env, tmpBuf);
       break;
     }
-    
+
     return True;
   } while (0);
 
@@ -767,7 +771,7 @@ static Boolean isBadIPv6AddressForUs(ipv6AddressBits addr) {
   //   - the first 10 bits are 0xFE8, indicating a link-local or site-local address, or
   //   - the first 15 bytes are 0, and the 16th byte is 0 (unspecified) or 1 (loopback)
   if (addr[0] == 0xFE) return (addr[1]&0x80) != 0;
-  
+
   for (unsigned i = 0; i < 15; ++i) {
     if (addr[i] != 0) return False;
   }
@@ -806,7 +810,7 @@ static ipv4AddressBits _ourIPv4Address = 0;
 
 ipv4AddressBits ourIPv4Address(UsageEnvironment& env) {
   if (ReceivingInterfaceAddr != INADDR_ANY) {
-    // Hack: If we were told to receive on a specific interface address, then 
+    // Hack: If we were told to receive on a specific interface address, then
     // define this to be our ip address:
     _ourIPv4Address = ReceivingInterfaceAddr;
   }
@@ -853,7 +857,7 @@ Boolean weHaveAnIPAddress(UsageEnvironment& env) {
 static void copyAddress(struct sockaddr_storage& to, struct sockaddr const* from) {
   // Copy a "struct sockaddr" to a "struct sockaddr_storage" (assumed to be large enough)
   if (from == NULL) return;
-  
+
   switch (from->sa_family) {
     case AF_INET: {
 #ifdef HAVE_SOCKADDR_LEN
@@ -1011,7 +1015,7 @@ char const* timestampString() {
 // For Windoze, we need to implement our own gettimeofday()
 
 // used to make sure that static variables in gettimeofday() aren't initialized simultaneously by multiple threads
-static LONG initializeLock_gettimeofday = 0;  
+static LONG initializeLock_gettimeofday = 0;
 
 #if !defined(_WIN32_WCE)
 #include <sys/timeb.h>
@@ -1029,7 +1033,7 @@ int gettimeofday(struct timeval* tp, int* /*tz*/) {
 #else
   tickNow.QuadPart = GetTickCount();
 #endif
- 
+
   if (!isInitialized) {
     if(1 == InterlockedIncrement(&initializeLock_gettimeofday)) {
 #if !defined(_WIN32_WCE)
@@ -1065,13 +1069,13 @@ int gettimeofday(struct timeval* tp, int* /*tz*/) {
 
       // resolution of GetTickCounter() is always milliseconds
       tickFrequency.QuadPart = 1000;
-#endif     
+#endif
       // compute an offset to add to subsequent counter times, so we get a proper epoch:
       epochOffset.QuadPart
           = tp->tv_sec * tickFrequency.QuadPart + (tp->tv_usec * tickFrequency.QuadPart) / 1000000L - tickNow.QuadPart;
-      
+
       // next caller can use ticks for time calculation
-      isInitialized = True; 
+      isInitialized = True;
       return 0;
     } else {
         InterlockedDecrement(&initializeLock_gettimeofday);

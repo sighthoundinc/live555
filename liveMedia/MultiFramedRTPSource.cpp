@@ -83,6 +83,7 @@ void MultiFramedRTPSource::reset() {
   fPacketReadInProgress = NULL;
   fNeedDelivery = False;
   fPacketLossInFragmentedFrame = False;
+  fDroppedFrames = 0;
 }
 
 MultiFramedRTPSource::~MultiFramedRTPSource() {
@@ -166,7 +167,10 @@ void MultiFramedRTPSource::doGetNextFrame1() {
       fPacketLossInFragmentedFrame = False;
     } else if (packetLossPrecededThis) {
       // We're in a multi-packet frame, with preceding packet loss
-      fPacketLossInFragmentedFrame = True;
+      if (fPacketLossInFragmentedFrame == False) {
+        fDroppedFrames++;
+        fPacketLossInFragmentedFrame = True;
+      }
     }
     if (fPacketLossInFragmentedFrame) {
       // This packet is unusable; reject it:

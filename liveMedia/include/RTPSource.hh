@@ -48,6 +48,7 @@ public:
 
   virtual void setPacketReorderingThresholdTime(unsigned uSeconds) = 0;
 
+  virtual unsigned getDroppedFramesCount() const = 0;
   void setCrypto(SRTPCryptographicContext* crypto) { fCrypto = crypto; }
 
   // used by RTCP:

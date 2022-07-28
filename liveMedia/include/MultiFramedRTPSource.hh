@@ -47,6 +47,8 @@ protected:
 						    unsigned packetSize);
       // The default implementation returns True, but this can be redefined
 
+  virtual unsigned getDroppedFramesCount() const { return fDroppedFrames; }
+
 protected:
   Boolean fCurrentPacketBeginsFrame;
   Boolean fCurrentPacketCompletesFrame;
@@ -73,6 +75,7 @@ private:
   Boolean fPacketLossInFragmentedFrame;
   unsigned char* fSavedTo;
   unsigned fSavedMaxSize;
+  unsigned fDroppedFrames;
 
   // A buffer to (optionally) hold incoming pkts that have been reorderered
   class ReorderingPacketBuffer* fReorderingBuffer;
